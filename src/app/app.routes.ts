@@ -1,4 +1,5 @@
-import { RouterModule, Routes } from '@angular/router';
+import { NgModule } from '@angular/core';
+import { RouterModule, Routes } from '@angular/router';  // RouterModule と Routes をインポート
 import {
   AuthGuard,
   redirectLoggedInTo,
@@ -7,9 +8,11 @@ import {
 import { LoginPageComponent } from './pages/login-page/login-page.component';
 import { ChatPageComponent } from './pages/chat-page/chat-page.component';
 
+// ルートのリダイレクト設定
 const redirectUnauthorizedToLogin = () => redirectUnauthorizedTo(['login']);
 const redirectLoggedInToHome = () => redirectLoggedInTo(['chat']);
 
+// ルート設定
 export const routes: Routes = [
   {
     path: '',
@@ -30,3 +33,9 @@ export const routes: Routes = [
     data: { authGuardPipe: redirectUnauthorizedToLogin },
   },
 ];
+
+@NgModule({
+  imports: [RouterModule.forRoot(routes)],  // forRoot でルート設定を適用
+  exports: [RouterModule],  // ルーティングを外部に公開
+})
+export class AppRoutingModule {}

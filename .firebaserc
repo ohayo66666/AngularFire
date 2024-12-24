@@ -1,0 +1,16 @@
+{
+  "projects": {
+    "default": "karaoketyou",
+    "production": "karaoketyou"
+  },
+  "targets": {
+    "karaoketyou": {
+      "hosting": {
+        "karaoketyou": [
+          "karaoketyou"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}

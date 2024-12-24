@@ -10,4 +10,11 @@ import { ChatService } from 'src/app/services/chat.service';
 export class LoginPageComponent {
   chatService = inject(ChatService);
   user$ = this.chatService.user$;
+
+  // login メソッドをクラス内に移動
+  login() {
+    console.log('Login method is called');
+    // ログイン処理をここに実装
+    // 例えば、Firebase Authenticationでのログイン処理
+  }
 }

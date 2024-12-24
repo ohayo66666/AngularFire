@@ -1,53 +1,65 @@
 import { inject, Injectable } from '@angular/core';
+import { DocumentReference, DocumentData } from '@firebase/firestore';
 import {
   Auth,
-  authState,
+  //authState,
   signInWithPopup,
   GoogleAuthProvider,
   signOut,
   user,
-  getAuth,
+  //getAuth,
   User,
 } from '@angular/fire/auth';
-import { map, switchMap, firstValueFrom, filter, Observable, Subscription } from 'rxjs';
+import { 
+  //map,
+  //switchMap,
+  //firstValueFrom,
+  //filter,
+  //Observable,
+  Subscription
+} from 'rxjs';
 import {
-  doc,
-  docData,
-  DocumentReference,
+  //doc,
+  //docData,
+  //DocumentReference,
   Firestore,
-  getDoc,
-  setDoc,
-  updateDoc,
+  //getDoc,
+  //setDoc,
+  //updateDoc,
   collection,
   addDoc,
-  deleteDoc,
-  collectionData,
-  Timestamp,
+  //deleteDoc,
+  //collectionData,
+  //Timestamp,
   serverTimestamp,
-  query,
-  orderBy,
-  limit,
-  onSnapshot,
-  DocumentData,
+  //query,
+  //orderBy,
+  //limit,
+  //onSnapshot,
+  //DocumentData,
   FieldValue,
 } from '@angular/fire/firestore';
 import {
   Storage,
-  getDownloadURL,
-  ref,
-  uploadBytesResumable,
+  //getDownloadURL,
+  //ref,
+  //uploadBytesResumable,
 } from '@angular/fire/storage';
-import { getToken, Messaging, onMessage } from '@angular/fire/messaging';
+import {
+  //getToken,
+  Messaging,
+  //onMessage
+} from '@angular/fire/messaging';
 import { Router } from '@angular/router';
 
-type ChatMessage = {
+interface ChatMessage {
   name: string | null,
   profilePicUrl: string | null,
   timestamp: FieldValue,
   uid: string | null,
   text?: string,
   imageUrl?: string
-};
+}
 
 
 @Injectable({
@@ -73,17 +85,69 @@ export class ChatService {
     });
   }
 
-  // Login Friendly Chat.
-  login() {}
+// Login Friendly Chat.
+login() {
+  signInWithPopup(this.auth, this.provider)
+    .then(() => {
+      this.router.navigate(['/', 'chat']);
+    })
+    .catch((error) => {
+      console.error('Login error:', error);
+    });
+}
 
-  // Logout of Friendly Chat.
-  logout() {}
+// Logout of Friendly Chat.
+logout() {
+  signOut(this.auth)
+    .then(() => {
+      this.router.navigate(['/', 'login']);
+      console.log('signed out');
+    })
+    .catch((error) => {
+      console.error('Sign out error:', error);
+    });
+}
 
-  // Adds a text or image message to Cloud Firestore.
-  addMessage = async (
-    textMessage: string | null,
-    imageUrl: string | null
-  ): Promise<void | DocumentReference<DocumentData>> => {};
+// Adds a text or image message to Cloud Firestore.
+addMessage = async (
+  textMessage: string | null,
+  imageUrl: string | null
+): Promise<void | DocumentReference<DocumentData>> => {
+  if (!textMessage && !imageUrl) {
+    console.log(
+      "addMessage was called without a message",
+      textMessage,
+      imageUrl
+    );
+    return;
+  }
+
+  if (this.currentUser === null) {
+    console.log("addMessage requires a signed-in user");
+    return;
+  }
+
+  const message: ChatMessage = {
+    name: this.currentUser.displayName || "Anonymous",
+    profilePicUrl: this.currentUser.photoURL || "",
+    timestamp: serverTimestamp(),
+    uid: this.currentUser.uid,
+  };
+
+  if (textMessage) message.text = textMessage;
+  if (imageUrl) message.imageUrl = imageUrl;
+
+  try {
+    const newMessageRef = await addDoc(
+      collection(this.firestore, "messages"),
+      message
+    );
+    return newMessageRef;
+  } catch (error) {
+    console.error("Error writing new message to Firebase Database", error);
+    return;
+  }
+};
 
   // Saves a new message to Cloud Firestore.
   saveTextMessage = async (messageText: string) => {
@@ -97,25 +161,42 @@ export class ChatService {
 
   // Saves a new message containing an image in Firebase.
   // This first saves the image in Firebase storage.
-  saveImageMessage = async (file: any) => {};
+  saveImageMessage = async (file: File) => {
+    if (!file) {
+      console.log('No file provided');
+      return;
+    }
+    
+    // ファイルが存在する場合の処理を追加（例えば、Firebaseに保存する）
+    console.log('File received:', file);
 
-  async updateData(path: string, data: any) {}
+    // ここでファイルを処理するコードを追加
+    // 例えば、Firebase Storage にファイルをアップロードするなど
 
-  async deleteData(path: string) {}
+    // Firebase Storageのアップロード例：
+    // const storageRef = firebase.storage().ref().child(`images/${file.name}`);
+    // await storageRef.put(file);
+  
+    // アップロード後の処理が必要な場合もここに追加
+  };
 
-  getDocData(path: string) {}
+  //async updateData(path: string, data: any) {}
 
-  getCollectionData(path: string) {}
+  //async deleteData(path: string) {}
+
+  //getDocData(path: string) {}
+
+  //getCollectionData(path: string) {}
 
   async uploadToStorage(
-    path: string,
-    input: HTMLInputElement,
-    contentType: any
+    //path: string,
+    //input: HTMLInputElement,
+    //contentType: any
   ) {
     return null;
   }
   // Requests permissions to show notifications.
-  requestNotificationsPermissions = async () => {};
+  //requestNotificationsPermissions = async () => {};
 
-  saveMessagingDeviceToken = async () => {};
+  //saveMessagingDeviceToken = async () => {};
 }
