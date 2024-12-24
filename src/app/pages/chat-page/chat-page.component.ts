@@ -23,11 +23,16 @@ export class ChatPageComponent {
     this.text = '';
   }
 
-  uploadImage(event: any) {
-    const imgFile: File = event.target.files[0];
-    if (!imgFile) {
-      return;
+  uploadImage(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      const imgFile = input.files[0];
+      console.log('Selected file:', imgFile);
+
+      // ChatService で画像メッセージを処理
+      this.chatService.saveImageMessage(imgFile);
+    } else {
+      console.error('No file selected');
     }
-    this.chatService.saveImageMessage(imgFile);
   }
 }
