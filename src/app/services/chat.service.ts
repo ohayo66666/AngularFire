@@ -19,36 +19,36 @@ import {
   Subscription
 } from 'rxjs';
 import {
-  //doc,
+  doc,
   //docData,
   //DocumentReference,
   Firestore,
   //getDoc,
-  //setDoc,
-  //updateDoc,
+  setDoc,
+  updateDoc,
   collection,
   addDoc,
   //deleteDoc,
-  //collectionData,
+  collectionData,
   //Timestamp,
   serverTimestamp,
-  //query,
-  //orderBy,
-  //limit,
+  query,
+  orderBy,
+  limit,
   //onSnapshot,
   //DocumentData,
   FieldValue,
 } from '@angular/fire/firestore';
 import {
   Storage,
-  //getDownloadURL,
-  //ref,
-  //uploadBytesResumable,
+  getDownloadURL,
+  ref,
+  uploadBytesResumable,
 } from '@angular/fire/storage';
 import {
-  //getToken,
+  getToken,
   Messaging,
-  //onMessage
+  onMessage
 } from '@angular/fire/messaging';
 import { Router } from '@angular/router';
 
@@ -148,33 +148,36 @@ addMessage = async (
     return;
   }
 };
-
+  saveTextMessage(text: string) {
+    // メッセージ保存のロジックを追加
+    console.log(text);
+  }
   // Saves the messaging device token to Cloud Firestore.
   saveMessagingDeviceToken= async () => {
-      try {
-        const currentToken = await getToken(this.messaging);
-        if (currentToken) {
-          console.log('Got FCM device token:', currentToken);
-          // Saving the Device Token to Cloud Firestore.
-          const tokenRef = doc(this.firestore, 'fcmTokens', currentToken);
-          await setDoc(tokenRef, { uid: this.auth.currentUser?.uid });
+    try {
+      const currentToken = await getToken(this.messaging);
+      if (currentToken) {
+        console.log('Got FCM device token:', currentToken);
+        // Saving the Device Token to Cloud Firestore.
+        const tokenRef = doc(this.firestore, 'fcmTokens', currentToken);
+        await setDoc(tokenRef, { uid: this.auth.currentUser?.uid });
  
-          // This will fire when a message is received while the app is in the foreground.
-          // When the app is in the background, firebase-messaging-sw.js will receive the message instead.
-          onMessage(this.messaging, (message) => {
-            console.log(
-              'New foreground notification from Firebase Messaging!',
-              message.notification
-            );
-          });
-        } else {
-          // Need to request permissions to show notifications.
-          this.requestNotificationsPermissions();
-        }
-      } catch(error) {
-        console.error('Unable to get messaging token.', error);
-      };
-
+        // This will fire when a message is received while the app is in the foreground.
+        // When the app is in the background, firebase-messaging-sw.js will receive the message instead.
+        onMessage(this.messaging, (message) => {
+          console.log(
+            'New foreground notification from Firebase Messaging!',
+            message.notification
+          );
+        });
+      } else {
+        // Need to request permissions to show notifications.
+        this.requestNotificationsPermissions();
+      }
+    } catch(error) {
+      console.error('Unable to get messaging token.', error);
+    }
+  };
   // Loads chat messages history and listens for upcoming ones.
   loadMessages = () => {
     // Create the query to load the last 12 messages and listen for new ones.
@@ -185,9 +188,7 @@ addMessage = async (
 
   // Saves a new message containing an image in Firebase.
   // This first saves the image in Firebase storage.
-  // Saves a new message containing an image in Firestore.
-  // This first saves the image in Firebase storage.
-  saveImageMessage = async(file: any) => {
+  saveImageMessage = async (file: File) => {
     try {
       // 1 - Add a message with a loading icon that will get updated with the shared image.
       const messageRef = await this.addMessage(null, this.LOADING_IMAGE_URL);
@@ -201,16 +202,16 @@ addMessage = async (
       const publicImageUrl = await getDownloadURL(newImageRef);
 
       // 4 - Update the chat message placeholder with the image's URL.
-      messageRef ?
-      await updateDoc(messageRef, {
-        imageUrl: publicImageUrl,
-        storageUri: fileSnapshot.metadata.fullPath
-      }): null;
+      if (messageRef) {
+        await updateDoc(messageRef, {
+          imageUrl: publicImageUrl,
+          storageUri: fileSnapshot.metadata.fullPath
+        });
+      }
     } catch (error) {
       console.error('There was an error uploading a file to Cloud Storage:', error);
     }
-  }
-
+  };
   //async updateData(path: string, data: any) {}
 
   //async deleteData(path: string) {}
@@ -219,14 +220,10 @@ addMessage = async (
 
   //getCollectionData(path: string) {}
 
-  async uploadToStorage(
-    //path: string,
-    //input: HTMLInputElement,
-    //contentType: any
-  ) {
-    return null;
-  }
-  // Requests permissions to show notifications.
+  // Remove unnecessary method if not in use.
+  //async uploadToStorage() {
+  //  return null;
+  //};
   // Requests permissions to show notifications.
   requestNotificationsPermissions = async () => {
       console.log('Requesting notifications permission...');
@@ -239,7 +236,7 @@ addMessage = async (
       } else {
         console.log('Unable to get permission to notify.');
       }
-  }
+  };
   //requestNotificationsPermissions = async () => {};
 
   //saveMessagingDeviceToken = async () => {};

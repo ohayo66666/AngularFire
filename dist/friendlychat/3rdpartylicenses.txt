@@ -73,6 +73,8 @@ THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH RE
 
 rxfire/auth
 
+rxfire/firestore
+
 rxjs
 Apache-2.0
                                Apache License
