@@ -149,36 +149,67 @@ addMessage = async (
   }
 };
 
-  // Saves a new message to Cloud Firestore.
-  saveTextMessage = async (messageText: string) => {
-    return this.addMessage(messageText, null);
-  };
+  // Saves the messaging device token to Cloud Firestore.
+  saveMessagingDeviceToken= async () => {
+      try {
+        const currentToken = await getToken(this.messaging);
+        if (currentToken) {
+          console.log('Got FCM device token:', currentToken);
+          // Saving the Device Token to Cloud Firestore.
+          const tokenRef = doc(this.firestore, 'fcmTokens', currentToken);
+          await setDoc(tokenRef, { uid: this.auth.currentUser?.uid });
+ 
+          // This will fire when a message is received while the app is in the foreground.
+          // When the app is in the background, firebase-messaging-sw.js will receive the message instead.
+          onMessage(this.messaging, (message) => {
+            console.log(
+              'New foreground notification from Firebase Messaging!',
+              message.notification
+            );
+          });
+        } else {
+          // Need to request permissions to show notifications.
+          this.requestNotificationsPermissions();
+        }
+      } catch(error) {
+        console.error('Unable to get messaging token.', error);
+      };
 
   // Loads chat messages history and listens for upcoming ones.
   loadMessages = () => {
-    return null as unknown;
+    // Create the query to load the last 12 messages and listen for new ones.
+    const recentMessagesQuery = query(collection(this.firestore, 'messages'), orderBy('timestamp', 'desc'), limit(12));
+    // Start listening to the query.
+    return collectionData(recentMessagesQuery);
   };
 
   // Saves a new message containing an image in Firebase.
   // This first saves the image in Firebase storage.
-  saveImageMessage = async (file: File) => {
-    if (!file) {
-      console.log('No file provided');
-      return;
+  // Saves a new message containing an image in Firestore.
+  // This first saves the image in Firebase storage.
+  saveImageMessage = async(file: any) => {
+    try {
+      // 1 - Add a message with a loading icon that will get updated with the shared image.
+      const messageRef = await this.addMessage(null, this.LOADING_IMAGE_URL);
+
+      // 2 - Upload the image to Cloud Storage.
+      const filePath = `${this.auth.currentUser?.uid}/${file.name}`;
+      const newImageRef = ref(this.storage, filePath);
+      const fileSnapshot = await uploadBytesResumable(newImageRef, file);
+
+      // 3 - Generate a public URL for the file.
+      const publicImageUrl = await getDownloadURL(newImageRef);
+
+      // 4 - Update the chat message placeholder with the image's URL.
+      messageRef ?
+      await updateDoc(messageRef, {
+        imageUrl: publicImageUrl,
+        storageUri: fileSnapshot.metadata.fullPath
+      }): null;
+    } catch (error) {
+      console.error('There was an error uploading a file to Cloud Storage:', error);
     }
-    
-    // ファイルが存在する場合の処理を追加（例えば、Firebaseに保存する）
-    console.log('File received:', file);
-
-    // ここでファイルを処理するコードを追加
-    // 例えば、Firebase Storage にファイルをアップロードするなど
-
-    // Firebase Storageのアップロード例：
-    // const storageRef = firebase.storage().ref().child(`images/${file.name}`);
-    // await storageRef.put(file);
-  
-    // アップロード後の処理が必要な場合もここに追加
-  };
+  }
 
   //async updateData(path: string, data: any) {}
 
@@ -196,6 +227,19 @@ addMessage = async (
     return null;
   }
   // Requests permissions to show notifications.
+  // Requests permissions to show notifications.
+  requestNotificationsPermissions = async () => {
+      console.log('Requesting notifications permission...');
+      const permission = await Notification.requestPermission();
+    
+      if (permission === 'granted') {
+        console.log('Notification permission granted.');
+        // Notification permission granted.
+        await this.saveMessagingDeviceToken();
+      } else {
+        console.log('Unable to get permission to notify.');
+      }
+  }
   //requestNotificationsPermissions = async () => {};
 
   //saveMessagingDeviceToken = async () => {};
